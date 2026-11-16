@@ -14,7 +14,12 @@
 
 ## install
 
-as root, in this folder.
+run everything below as root, from inside the cloned purr folder:
+
+```sh
+git clone https://github.com/cqley/purr
+cd purr
+```
 
 ### 1. config
 
