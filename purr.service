@@ -1,0 +1,17 @@
+[Unit]
+Description=purr
+Requires=purr.socket
+
+[Service]
+ExecStart=fcgiwrap -c 4
+User=gitweb
+Group=git
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX

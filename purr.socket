@@ -1,0 +1,8 @@
+[Socket]
+ListenStream=/run/purr.sock
+SocketUser=@WWW@
+SocketGroup=@WWW@
+SocketMode=0600
+
+[Install]
+WantedBy=sockets.target
