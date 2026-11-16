@@ -336,6 +336,8 @@ head_ref() {
 	[ -n "$sha" ]
 }
 
+seen() { [ -n "$(g for-each-ref --contains "$sha" --count=1 refs/heads refs/tags)" ]; }
+
 resolve() {
 	left=$1 try=
 	while [ -n "$left" ]; do
@@ -352,7 +354,7 @@ resolve() {
 	seg=${1%%/*}
 	case $seg in '' | *[!0-9a-f]*) return 1 ;; esac
 	[ ${#seg} -ge 4 ] || return 1
-	sha=$(g rev-parse -q --verify "$seg^{commit}") || return 1
+	sha=$(g rev-parse -q --verify "$seg^{commit}") && seen || return 1
 	ref=$seg
 	[ "$seg" = "$sha" ] && pinned=1
 	case $1 in */*) path=${1#*/} ;; *) path= ;; esac
@@ -604,7 +606,7 @@ slug() { printf '%s\n' "$1" | tr -c 'A-Za-z0-9._\n' '-'; }
 commit() {
 	case $1 in '' | *[!0-9a-f]* | */*) nf ;; esac
 	[ ${#1} -ge 4 ] || nf
-	sha=$(g rev-parse -q --verify "$1^{commit}") || nf
+	sha=$(g rev-parse -q --verify "$1^{commit}") && seen || nf
 	[ "$1" = "$sha" ] || go "/$o/$r/commit/$sha/"
 	pinned=1
 	fresh "$sha"
@@ -686,7 +688,7 @@ refs() {
 
 backend() {
 	case $1 in
-	HEAD | info/refs | git-upload-pack | objects/*) ;;
+	info/refs | git-upload-pack) ;;
 	*) nf ;;
 	esac
 	case $QUERY_STRING in *receive*) nf ;; esac
@@ -717,7 +719,7 @@ d=$GITROOT/$o/$bare.git
 act=${rest%%/*}
 case $rest in */*) arg=${rest#*/} ;; *) arg= ;; esac
 
-case $act in HEAD | info | objects | git-upload-pack) r=$bare backend "$rest" ;; esac
+case $act in info | git-upload-pack) r=$bare backend "$rest" ;; esac
 [ "$r" = "$bare" ] && [ -n "$slash" ] || go "/$o/$bare/"
 r=$bare
 
