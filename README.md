@@ -45,7 +45,7 @@ useradd -r -g git -M -s /usr/sbin/nologin gitweb
 ```sh
 make install
 systemctl daemon-reload
-systemctl enable --now purr.socket
+systemctl enable --now purr.socket purrtrash.timer
 ```
 
 ### 4. nginx
@@ -83,7 +83,9 @@ ssh git@git.example.org public thing       show it on the web
 ssh git@git.example.org private thing      hide it again
 ssh git@git.example.org desc thing words   set the description
 ssh git@git.example.org ls                 your repos
-ssh git@git.example.org rm thing           delete it
+ssh git@git.example.org rename thing new   rename it
+ssh git@git.example.org rm thing           delete it, gone for good after 7 days
+ssh git@git.example.org restore thing      bring it back
 git clone https://git.example.org/alice/thing.git
 ```
 
@@ -93,6 +95,10 @@ everyone can push only to their own repos and read their own plus all public one
 
 ```sh
 git pull && make install
+systemctl daemon-reload
+systemctl enable --now purrtrash.timer
+systemctl restart purr.service
+make && nginx -t && systemctl reload nginx
 ```
 
 ## how

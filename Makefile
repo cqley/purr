@@ -1,6 +1,6 @@
 include config.mk
 
-SUB = sed -e 's|@HOST@|$(HOST)|g' -e 's|@DIR@|$(DIR)|g' -e 's|@WWW@|$(WWW)|g'
+SUB = sed -e 's|@HOST@|$(HOST)|g' -e 's|@ROOT@|$(ROOT)|g' -e 's|@DIR@|$(DIR)|g' -e 's|@WWW@|$(WWW)|g'
 
 all: purr.conf
 
@@ -17,6 +17,8 @@ install:
 	chmod 644 $(DESTDIR)$(DIR)/git.css $(DESTDIR)$(DIR)/git.js $(DESTDIR)$(DIR)/theme.js
 	$(SUB) purr.socket > $(DESTDIR)$(UNITS)/purr.socket
 	$(SUB) purr.service > $(DESTDIR)$(UNITS)/purr.service
+	$(SUB) purrtrash.service > $(DESTDIR)$(UNITS)/purrtrash.service
+	cp purrtrash.timer $(DESTDIR)$(UNITS)/purrtrash.timer
 
 keys:
 	mkdir -p $(ROOT)/.ssh
@@ -26,7 +28,7 @@ keys:
 	chmod 600 $(ROOT)/.ssh/authorized_keys
 
 uninstall:
-	rm -rf $(DESTDIR)$(DIR) $(DESTDIR)$(UNITS)/purr.socket $(DESTDIR)$(UNITS)/purr.service
+	rm -rf $(DESTDIR)$(DIR) $(DESTDIR)$(UNITS)/purr.socket $(DESTDIR)$(UNITS)/purr.service $(DESTDIR)$(UNITS)/purrtrash.service $(DESTDIR)$(UNITS)/purrtrash.timer
 
 clean:
 	rm -f purr.conf

@@ -2,7 +2,7 @@
 : "${GITROOT:=/var/lib/git}"
 : "${GITHOST:=git.example.org}"
 : "${GITSSH:=$GITHOST}"
-export LC_ALL=C HOME=/var/empty GIT_CONFIG_NOSYSTEM=1
+export LC_ALL=C HOME=/var/empty GIT_CONFIG_NOSYSTEM=1 GIT_LITERAL_PATHSPECS=1
 export GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0='*' GIT_CONFIG_KEY_1=core.quotePath GIT_CONFIG_VALUE_1=false
 
 E='
@@ -249,8 +249,9 @@ top() {
 	printf '</header>\n'
 	[ -n "$r" ] || return 0
 	printf '<nav>'
-	for t in summary tree commits refs; do
+	for t in summary tree commits branches tags; do
 		l=/$o/$r/
+		[ $t = tags ] && [ -z "$(g for-each-ref --count=1 refs/tags)" ] && continue
 		[ $t = summary ] || l=$l$t/
 		[ $t = "$tab" ] && c=' class=on' || c=
 		[ $t = summary ] || printf ' | '
@@ -331,7 +332,7 @@ head_ref() {
 	ref=$(g symbolic-ref -q --short HEAD)
 	sha=$(g rev-parse -q --verify 'HEAD^{commit}')
 	[ -n "$sha" ] && return 0
-	ref=$(g for-each-ref --count=1 --format='%(refname:short)' refs/heads)
+	ref=$(g for-each-ref --count=1 --format='%(refname:lstrip=2)' refs/heads)
 	[ -n "$ref" ] && sha=$(g rev-parse -q --verify "refs/heads/$ref^{commit}")
 	[ -n "$sha" ]
 }
@@ -373,7 +374,7 @@ listing() {
 	{
 		g ls-tree -z "$sha:$path" | tr '\n\0' '?\n'
 		printf '\001\n'
-		git --literal-pathspecs -C "$d" log -z --format='%x01%H%x09%as%x09%s' --name-only "$sha" -- ${path:+"$path"} | tr '\n\0' '?\n'
+		g log -z --format='%x01%H%x09%as%x09%s' --name-only "$sha" -- ${path:+"$path"} | tr '\n\0' '?\n'
 	} | awk "$E"'
 	!sep && $0 == "\001" { sep = 1; if (!n) exit; next }
 	!sep {
@@ -673,17 +674,15 @@ commit() {
 }
 
 refs() {
-	[ -z "$1" ] || nf
-	tab=refs
-	top "refs @ $o/$r"
-	for k in heads tags; do
-		[ $k = heads ] && t=branches || t=tags
-		g for-each-ref --sort=-creatordate --format='%(refname:short)%09%(objectname:short)%09%(creatordate:short)%09%(contents:subject)' "refs/$k" | awk -F '\t' "$E"'
-		NR == 1 { print "<h2>" t "</h2>\n<table class=log>" }
-		{ s = $4; for (i = 5; i <= NF; i++) s = s " " $i
-		  print "<tr><td><a href=\"/" base "/tree/" e(u($1)) "/\">" e($1) "</a></td><td><a href=\"/" base "/commits/" e(u($1)) "/\">" e(s) "</a></td><td class=r>" $3 "</td><td class=r><a href=\"/" base "/archive/" e(u($1)) ".tar.gz\" class=dim>tar.gz</a></td></tr>" }
-		END { if (NR) print "</table>" }' t="$t" base="$o/$r"
-	done
+	[ -z "$2" ] || nf
+	tab=$1
+	top "$1 @ $o/$r"
+	[ $1 = branches ] && k=heads || k=tags
+	g for-each-ref --sort=-creatordate --format='%(refname:lstrip=2)%09%(objectname:short)%09%(creatordate:short)%09%(contents:subject)' "refs/$k" | awk -F '\t' "$E"'
+	NR == 1 { print "<table class=log>" }
+	{ s = $4; for (i = 5; i <= NF; i++) s = s " " $i
+	  print "<tr><td><a href=\"/" base "/tree/" e(u($1)) "/\">" e($1) "</a></td><td><a href=\"/" base "/commits/" e(u($1)) "/\">" e(s) "</a></td><td class=r>" $3 "</td><td class=r><a href=\"/" base "/archive/" e(u($1)) ".tar.gz\" class=dim>tar.gz</a></td></tr>" }
+	END { print NR ? "</table>" : "<p class=dim>none</p>" }' base="$o/$r"
 }
 
 backend() {
@@ -730,7 +729,8 @@ raw) raw "$arg" ;;
 commits) log "${arg%/}" ;;
 log) go "/$o/$r/commits/$(uh "$arg" | sed 1q)" ;;
 commit) commit "${arg%/}" ;;
-refs) refs "${arg%/}" ;;
+branches | tags) refs "$act" "${arg%/}" ;;
+refs) go "/$o/$r/branches/" ;;
 files) files "${arg%/}" ;;
 archive) archive "$arg" ;;
 *) nf ;;

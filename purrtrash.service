@@ -1,0 +1,12 @@
+[Unit]
+Description=purr trash
+
+[Service]
+Type=oneshot
+User=git
+Group=git
+ExecStart=sh -c '[ ! -d @ROOT@/.trash ] || find @ROOT@/.trash -mindepth 2 -maxdepth 2 -name "*.git" -mtime +6 -exec rm -rf {} +'
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=@ROOT@
+PrivateNetwork=yes
