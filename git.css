@@ -323,11 +323,11 @@ table.diff .n + .n {
   border-right: 1px solid var(--line);
 }
 
-table.diff .add td {
+table.diff .add td:last-child {
   background: color-mix(in srgb, var(--add) 12%, transparent);
 }
 
-table.diff .del td {
+table.diff .del td:last-child {
   background: color-mix(in srgb, var(--del) 10%, transparent);
 }
 
