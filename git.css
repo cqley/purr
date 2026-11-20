@@ -151,9 +151,12 @@ tr:last-child td {
   overflow-wrap: anywhere;
 }
 
+.tree td:first-child {
+  width: 50%;
+}
+
 .tree .msg {
-  width: 100%;
-  text-align: center;
+  width: 50%;
   max-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
