@@ -631,6 +631,18 @@ commit() {
 	  rows = rows "<tr><td class=r>" ($1 == "-" ? "<span class=dim>bin</span>" : $1 == "0" ? "" : "<span class=add>+" $1 "</span>") "</td><td class=r>" ($2 == "-" || $2 == "0" ? "" : "<span class=del>-" $2 "</span>") "</td><td><a href=\"#f" n "\">" e($3) "</a></td></tr>\n" }
 	END { if (n) printf "<p class=dim>%s · <span class=add>+%d</span> <span class=del>-%d</span></p>\n<table class=stat>\n%s</table>\n", (n == 1 ? "1 file" : n " files"), ta, td, rows }'
 	g diff --no-color "$p" "$sha" | head -n 5000 | awk "$E"'
+	function unq(s,  r, i, c, n, k) {
+		if (substr(s, 1, 1) != "\"") return s
+		s = substr(s, 2, length(s) - 2); r = ""
+		for (i = 1; i <= length(s); i++) {
+			c = substr(s, i, 1)
+			if (c != "\\") { r = r c; continue }
+			c = substr(s, ++i, 1)
+			if (c ~ /[0-7]/) { n = 0; for (k = 0; k < 3 && substr(s, i, 1) ~ /[0-7]/; k++) n = n * 8 + substr(s, i++, 1); r = r sprintf("%c", n); i--; continue }
+			r = r (c == "n" ? "\n" : c == "t" ? "\t" : c == "a" ? "\a" : c == "b" ? "\b" : c == "f" ? "\f" : c == "r" ? "\r" : c == "v" ? "\v" : c)
+		}
+		return r
+	}
 	function show() {
 		if (shown) return
 		shown = 1
@@ -647,21 +659,23 @@ commit() {
 	/^diff --git / {
 		end(); f++; shown = open = del = 0; hd = 1; note = ""
 		x = substr($0, 14); k = length(x); h = (k - 5) / 2
-		if (k % 2 && substr(x, h + 3, 3) == " b/") name = substr(x, 3, h); else name = substr(x, index(x, " b/") + 3)
+		if (substr(x, k) == "\"") { for (i = k - 1; i > 1 && substr(x, i, 4) != " \"b/"; i--); name = substr(unq(substr(x, i + 1)), 3) }
+		else if (k % 2 && substr(x, h + 3, 3) == " b/") name = substr(x, 3, h); else name = substr(x, index(x, " b/") + 3)
 		old = name
 		next
 	}
 	hd && /^new file mode / { note = "new"; next }
 	hd && /^deleted file mode / { note = "deleted"; del = 1; next }
-	hd && /^rename from / { old = substr($0, 13); note = "renamed from " old; next }
-	hd && /^rename to / { name = substr($0, 11); next }
-	hd && /^copy from / { old = substr($0, 11); note = "copied from " old; next }
-	hd && /^copy to / { name = substr($0, 9); next }
+	hd && /^rename from / { old = unq(substr($0, 13)); note = "renamed from " old; next }
+	hd && /^rename to / { name = unq(substr($0, 11)); next }
+	hd && /^copy from / { old = unq(substr($0, 11)); note = "copied from " old; next }
+	hd && /^copy to / { name = unq(substr($0, 9)); next }
 	hd && /^old mode / { om = substr($0, 10); next }
 	hd && /^new mode / { if (!note) note = "mode " om " → " substr($0, 10); next }
 	hd && /^Binary files / { note = note (note ? ", " : "") "binary"; next }
-	hd && /^--- / { if ($0 != "--- /dev/null") old = substr($0, 7); next }
-	hd && /^\+\+\+ / { if ($0 != "+++ /dev/null") name = substr($0, 7); next }
+	hd && /^(---|\+\+\+) / { sub(/\t$/, "") }
+	hd && /^--- / { if ($0 != "--- /dev/null") old = substr(unq(substr($0, 5)), 3); next }
+	hd && /^\+\+\+ / { if ($0 != "+++ /dev/null") name = substr(unq(substr($0, 5)), 3); next }
 	hd && /^(index|similarity|dissimilarity) / { next }
 	/^@@ / {
 		show(); hd = 0
