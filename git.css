@@ -153,6 +153,7 @@ tr:last-child td {
 
 .tree .msg {
   width: 100%;
+  text-align: center;
   max-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
