@@ -77,18 +77,18 @@ function inl(s,  x, a, b) {
 	while (match(S, /<!--([^-]|-[^-])*-->/)) { cut(); S = pre post }
 	while (match(S, /<https?:\/\/[^ <>]+>/)) { x = cut(); x = substr(x, 2, length(x) - 2); S = pre keep("<a href=\"" e(x) "\">" e(x) "</a>") post }
 	while (match(S, /<\/?[A-Za-z][^<>]*>/)) { x = cut(); S = pre keep(tag(x)) post }
-	while (match(S, /!\[[^]]*\]\([^)]*\)/)) {
+	while (match(S, /!\[[^]]*\]\(([^()]|\([^()]*\))*\)/)) {
 		x = cut(); a = x; sub(/^!\[/, "", a); sub(/\]\(.*$/, "", a)
 		b = x; sub(/^!\[[^]]*\]\(/, "", b); sub(/\)$/, "", b); sub(/[ \t]+".*"$/, "", b)
 		S = pre pic("<img src=\"" e(url(bare(b), 1)) "\" alt=\"" e(bare(a)) "\" loading=\"lazy\">", url(bare(b), 1)) post
 	}
-	while (match(S, /\[[^]]*\]\([^)]*\)/)) {
+	while (match(S, /\[[^]]*\]\(([^()]|\([^()]*\))*\)/)) {
 		x = cut(); a = x; sub(/^\[/, "", a); sub(/\]\(.*$/, "", a)
 		b = x; sub(/^\[[^]]*\]\(/, "", b); sub(/\)$/, "", b); sub(/[ \t]+".*"$/, "", b)
 		x = a; while (match(x, /\001[0-9]+\002/)) { NOW[substr(x, RSTART + 1, RLENGTH - 2)] = 1; x = substr(x, RSTART + RLENGTH) }
 		S = pre keep("<a href=\"" e(url(bare(b), 0)) "\">") a keep("</a>") post
 	}
-	while (match(S, /https?:\/\/[^ \t<>"\001\002]+[^ \t<>"\001\002.,;:!?)]/)) { x = cut(); S = pre keep("<a href=\"" e(x) "\">" e(x) "</a>") post }
+	while (match(S, /https?:\/\/[^ \t<>"\001\002]+[^ \t<>"\001\002.,;:!?)]/)) { x = cut(); if (substr(post, 1, 1) == ")" && gsub(/\(/, "(", x) > gsub(/\)/, ")", x)) { x = x ")"; post = substr(post, 2) } S = pre keep("<a href=\"" e(x) "\">" e(x) "</a>") post }
 	S = e(S)
 	while (match(S, /\*\*[^*]+\*\*/)) { x = cut(); S = pre "<strong>" substr(x, 3, length(x) - 4) "</strong>" post }
 	while (match(S, /__[^_]+__/)) { x = cut(); S = pre "<strong>" substr(x, 3, length(x) - 4) "</strong>" post }
@@ -260,6 +260,12 @@ top() {
 		printf '<a href="%s"%s>%s</a>' "$l" "$c" $t
 	done
 	printf '</nav>\n'
+}
+
+empty() {
+	top "$tab"
+	printf '<p class=dim>empty</p>\n'
+	exit 0
 }
 
 nf() {
@@ -466,7 +472,7 @@ summary() {
 tree() {
 	tab=tree
 	if [ -z "$1" ]; then
-		head_ref || nf
+		head_ref || empty
 		go "/$o/$r/tree/$(uh "$ref")/"
 	fi
 	resolve "$1" || nf
@@ -571,7 +577,7 @@ raw() {
 log() {
 	tab=commits
 	if [ -z "$1" ]; then
-		head_ref || nf
+		head_ref || empty
 		go "/$o/$r/commits/$(uh "$ref")/"
 	fi
 	resolve "$1" || nf
