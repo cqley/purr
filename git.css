@@ -152,11 +152,11 @@ tr:last-child td {
 }
 
 .tree td:first-child {
-  width: 50%;
+  width: 40%;
 }
 
 .tree .msg {
-  width: 50%;
+  width: 60%;
   max-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
