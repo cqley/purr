@@ -151,12 +151,8 @@ tr:last-child td {
   overflow-wrap: anywhere;
 }
 
-.tree td:first-child {
-  width: 40%;
-}
-
 .tree .msg {
-  width: 60%;
+  width: 100%;
   max-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -541,5 +537,6 @@ table.diff .gap td {
 }
 
 #find[hidden] {
-  display: none;
+  display: block;
+  visibility: hidden;
 }
